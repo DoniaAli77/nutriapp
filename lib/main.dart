@@ -11,10 +11,13 @@ import 'package:nutriapp/screens/recipe_page.dart';
 import 'package:nutriapp/screens/register_page.dart';
 import 'firebase_options.dart'; // Make sure you have Firebase options configured
 
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  
   runApp(
     ProviderScope(
       child: MyApp(),
@@ -22,7 +25,41 @@ void main() async {
   );
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  bool _initialized = false; 
+  bool _error = false; 
+ 
+  // Define an async function to initialize FlutterFire 
+  void initializeFlutterFire() async { 
+    try { 
+      // Wait for Firebase to initialize and set `_initialized` state to true 
+      await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+);
+ 
+      setState(() { 
+        _initialized = true; 
+      }); 
+    } catch(e) { 
+      // Set `_error` state to true if Firebase initialization fails 
+      setState(() { 
+        _error = true; 
+        print('hie');
+        print(e);
+      }); 
+    } 
+  } 
+ 
+  void initState() { 
+   
+    initializeFlutterFire(); 
+    super.initState(); 
+  }
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
