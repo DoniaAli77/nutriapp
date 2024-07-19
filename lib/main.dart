@@ -8,6 +8,7 @@ import 'package:nutriapp/screens/meal_pan_page.dart';
 import 'package:nutriapp/screens/profile_page.dart';
 import 'package:nutriapp/screens/recipe_generation_page.dart';
 import 'package:nutriapp/screens/recipe_page.dart';
+import 'package:nutriapp/screens/register_page.dart';
 import 'firebase_options.dart'; // Make sure you have Firebase options configured
 
 void main() async {
@@ -32,6 +33,7 @@ class MyApp extends StatelessWidget {
       initialRoute: '/login',
       routes: {
         '/login': (context) => LoginPage(),
+        '/register':(context)=> RegisterPage(),
         '/home': (context) => HomePage(),
         '/profile': (context) => ProfilePage(),
         '/recipes': (context) => RecipePage(),
