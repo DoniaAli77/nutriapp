@@ -49,8 +49,7 @@ class _MyAppState extends State<MyApp> {
       // Set `_error` state to true if Firebase initialization fails 
       setState(() { 
         _error = true; 
-        print('hie');
-        print(e);
+      
       }); 
     } 
   } 
@@ -64,8 +63,19 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Recipe App',
-      theme: ThemeData(
+       theme: ThemeData(
         primarySwatch: Colors.blue,
+        textTheme: TextTheme(
+        
+        ), 
+        buttonTheme: ButtonThemeData(
+          buttonColor: Colors.purple, // Background color for buttons
+          textTheme: ButtonTextTheme.primary,
+        ),
+        appBarTheme: AppBarTheme(
+          color: Colors.purple,
+        
+        ),
       ),
       initialRoute: '/login',
       routes: {

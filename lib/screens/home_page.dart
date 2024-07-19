@@ -8,6 +8,7 @@ class HomePage extends HookConsumerWidget {
     final userAsyncValue = ref.watch(userProvider);
 
     return Scaffold(
+      
       appBar: AppBar(
         title: Text('Home'),
         actions: [
@@ -33,6 +34,7 @@ class HomePage extends HookConsumerWidget {
         error: (error, _) => Center(child: Text('Error: $error')),
       ),
       bottomNavigationBar: BottomNavigationBar(
+        
         items: [
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
           BottomNavigationBarItem(icon: Icon(Icons.menu_book), label: 'Recipes'),
@@ -55,6 +57,10 @@ class HomePage extends HookConsumerWidget {
               break;
           }
         },
+      
+       backgroundColor: Colors.blue, // Background color of the bar
+  selectedItemColor: Colors.white, // Color of the selected item
+  unselectedItemColor: Colors.grey[400], // Color of unselected items
       ),
     );
   }
