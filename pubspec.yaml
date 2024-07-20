@@ -31,17 +31,29 @@ dependencies:
   flutter:
     sdk: flutter
   firebase_core: ^2.0.0
-  cloud_firestore: 4.17.5
+  cloud_firestore: ^4.17.5
   firebase_auth: ^4.0.0
   provider: ^6.0.0
   flutter_hooks: ^0.18.0
   hooks_riverpod: ^1.0.0
+  flutter_dotenv: ^5.0.2 # For managing environment variables like API keys
+  google_fonts: ^3.0.1
+  animations: ^2.0.11
+  flutter_spinkit: ^5.2.1 
+  lottie: ^1.0.0
+  http: ^0.13.0
+
+
+  
+
 
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.6
   openai: ^1.0.0
+  image_picker: ^1.1.2
+  flutter_animate: ^4.5.0
 
 dev_dependencies:
   flutter_test:
@@ -64,6 +76,11 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+  assets:
+    - assets/chef.json
+    - assets/upload.json
+
+
 
   # To add assets to your application, add an assets section, like this:
   # assets:

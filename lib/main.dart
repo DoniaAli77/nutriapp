@@ -1,93 +1,73 @@
+import 'package:firebase_auth/firebase_auth.dart'; 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:nutriapp/screens/calorie_tracking_page.dart';
-import 'package:nutriapp/screens/home_page.dart';
-import 'package:nutriapp/screens/login_page.dart';
-import 'package:nutriapp/screens/meal_pan_page.dart';
-import 'package:nutriapp/screens/profile_page.dart';
-import 'package:nutriapp/screens/recipe_generation_page.dart';
-import 'package:nutriapp/screens/recipe_page.dart';
-import 'package:nutriapp/screens/register_page.dart';
-import 'firebase_options.dart'; // Make sure you have Firebase options configured
+import 'package:nutriapp/screens/home_page.dart'; 
+import 'firebase_options.dart';
+import 'screens/auth_screen.dart';
+import 'screens/loadingScreen.dart';
 
+void main() { 
+  runApp(MyApp()); 
+} 
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-  
-  runApp(
-    ProviderScope(
-      child: MyApp(),
-    ),
-  );
-}
+class MyApp extends StatefulWidget { 
+  @override 
+  _MyAppState createState() => _MyAppState(); 
+} 
 
-class MyApp extends StatefulWidget {
-  @override
-  State<MyApp> createState() => _MyAppState();
-}
-
-class _MyAppState extends State<MyApp> {
+class _MyAppState extends State<MyApp> { 
   bool _initialized = false; 
   bool _error = false; 
- 
-  // Define an async function to initialize FlutterFire 
+
   void initializeFlutterFire() async { 
     try { 
-      // Wait for Firebase to initialize and set `_initialized` state to true 
       await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-);
- 
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
       setState(() { 
         _initialized = true; 
       }); 
     } catch(e) { 
-      // Set `_error` state to true if Firebase initialization fails 
       setState(() { 
         _error = true; 
-      
       }); 
     } 
   } 
- 
+
+  @override 
   void initState() { 
-   
     initializeFlutterFire(); 
     super.initState(); 
-  }
-  @override
-  Widget build(BuildContext context) {
+  } 
+
+  @override 
+  Widget build(BuildContext context) { 
     return MaterialApp(
-      title: 'Recipe App',
-       theme: ThemeData(
+      title: 'NutriApp',
+      theme: ThemeData(
         primarySwatch: Colors.blue,
-        textTheme: TextTheme(
-        
-        ), 
-        buttonTheme: ButtonThemeData(
-          buttonColor: Colors.purple, // Background color for buttons
-          textTheme: ButtonTextTheme.primary,
-        ),
-        appBarTheme: AppBarTheme(
-          color: Colors.purple,
-        
-        ),
+        visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      initialRoute: '/login',
+      initialRoute: '/',
       routes: {
-        '/login': (context) => LoginPage(),
-        '/register':(context)=> RegisterPage(),
-        '/home': (context) => HomePage(),
-        '/profile': (context) => ProfilePage(),
-        '/recipes': (context) => RecipePage(),
-        '/mealplans': (context) => MealPlanPage(),
-        '/calories': (context) => CalorieTrackingPage(),
-        '/generate_recipe': (context) => RecipeGenerationPage(),
+        '/': (ctx) => _initialized 
+          ? StreamBuilder(
+              stream: FirebaseAuth.instance.authStateChanges(),
+              builder: (ctx, userSnapshot) {
+                if (userSnapshot.connectionState == ConnectionState.waiting) {
+                  return LoadingScreen();
+                }
+                if (userSnapshot.hasData) {
+                  return HomePage();
+                }
+                return LoginScreen();
+              },
+            )
+          : LoadingScreen(),
+        '/home': (ctx) => HomePage(),
+        '/login': (ctx) => LoginScreen(),
+        '/loading': (ctx) => LoadingScreen(),
       },
-    );
-  }
+    ); 
+  } 
 }

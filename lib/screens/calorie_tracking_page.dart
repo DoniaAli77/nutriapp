@@ -1,85 +1,98 @@
-import 'package:flutter/material.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
+// import 'dart:io';
+// import 'package:flutter/material.dart';
+// import 'package:image_picker/image_picker.dart';
+// import 'package:google_ml_kit/google_ml_kit.dart';
 
-class CalorieTrackingPage extends HookConsumerWidget {
-  final _formKey = GlobalKey<FormState>();
-  final TextEditingController _foodController = TextEditingController();
-  final TextEditingController _caloriesController = TextEditingController();
+// class CalorieTrackingPage extends StatefulWidget {
+//   @override
+//   _CalorieTrackingPageState createState() => _CalorieTrackingPageState();
+// }
 
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final calorieState = ref.watch(calorieProvider);
+// class _CalorieTrackingPageState extends State<CalorieTrackingPage> {
+//   File? _image;
+//   List<String> _labels = [];
+//   bool _isLoading = false;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Calorie Tracking'),
-      ),
-      body: Form(
-        key: _formKey,
-        child: Column(
-          children: [
-            TextFormField(
-              controller: _foodController,
-              decoration: InputDecoration(labelText: 'Food Item'),
-              validator: (value) => value!.isEmpty ? 'Enter a food item' : null,
-            ),
-            TextFormField(
-              controller: _caloriesController,
-              decoration: InputDecoration(labelText: 'Calories'),
-              keyboardType: TextInputType.number,
-              validator: (value) => value!.isEmpty ? 'Enter calories' : null,
-            ),
-            ElevatedButton(
-              onPressed: () {
-                if (_formKey.currentState!.validate()) {
-                  ref.read(calorieProvider.notifier).addCalories(
-                    _foodController.text,
-                    int.parse(_caloriesController.text),
-                  );
-                }
-              },
-              child: Text('Add'),
-            ),
-            Text('Total Calories: ${calorieState.totalCalories}'),
-            Text('Remaining Calories: ${calorieState.remainingCalories}'),
-          ],
-        ),
-      ),
-    );
-  }
-}
+//   final ImagePicker _picker = ImagePicker();
+//   final ImageLabeler _labeler = GoogleMlKit.vision.imageLabeler();
 
-final calorieProvider = StateNotifierProvider<CalorieNotifier, CalorieState>((ref) {
-  return CalorieNotifier();
-});
+//   Future<void> _pickImage() async {
+//     final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+//     if (pickedFile != null) {
+//       setState(() {
+//         _image = File(pickedFile.path);
+//         _isLoading = true;
+//       });
+//       await _analyzeImage(_image!);
+//     }
+//   }
 
-class CalorieNotifier extends StateNotifier<CalorieState> {
-  CalorieNotifier() : super(CalorieState());
+//   Future<void> _analyzeImage(File image) async {
+//     try {
+//       final InputImage visionImage = InputImage.fromFile(image);
+//       final List<ImageLabel> labels = await _labeler.processImage(visionImage);
 
-  void addCalories(String food, int calories) {
-    state = state.copyWith(
-      totalCalories: state.totalCalories + calories,
-      remainingCalories: state.remainingCalories - calories,
-    );
-  }
-}
+//       setState(() {
+//         _labels = labels.map((label) => '${label.label} (${(label.confidence * 100).toStringAsFixed(2)}%)').toList();
+//         _isLoading = false;
+//       });
+//     } catch (e) {
+//       setState(() {
+//         _labels = ['Failed to analyze image.'];
+//         _isLoading = false;
+//       });
+//     }
+//   }
 
-class CalorieState {
-  final int totalCalories;
-  final int remainingCalories;
+//   @override
+//   void dispose() {
+//     _labeler.close();
+//     super.dispose();
+//   }
 
-  CalorieState({
-    this.totalCalories = 0,
-    this.remainingCalories = 2000,
-  });
-
-  CalorieState copyWith({
-    int? totalCalories,
-    int? remainingCalories,
-  }) {
-    return CalorieState(
-      totalCalories: totalCalories ?? this.totalCalories,
-      remainingCalories: remainingCalories ?? this.remainingCalories,
-    );
-  }
-}
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       appBar: AppBar(
+//         title: Text('Calorie Tracking'),
+//       ),
+//       body: Center(
+//         child: SingleChildScrollView(
+//           padding: const EdgeInsets.all(16.0),
+//           child: Column(
+//             mainAxisAlignment: MainAxisAlignment.center,
+//             children: <Widget>[
+//               _image == null
+//                   ? Text('No image selected.')
+//                   : Image.file(_image!),
+//               SizedBox(height: 20),
+//               _isLoading
+//                   ? CircularProgressIndicator()
+//                   : _labels.isEmpty
+//                       ? Text(
+//                           'No labels available.',
+//                           style: TextStyle(fontSize: 16.0),
+//                         )
+//                       : Column(
+//                           children: _labels.map((label) => Text(
+//                             label,
+//                             style: TextStyle(fontSize: 16.0),
+//                           )).toList(),
+//                         ),
+//               SizedBox(height: 20),
+//               ElevatedButton(
+//                 onPressed: _pickImage,
+//                 child: Text('Pick Image'),
+//                 style: ElevatedButton.styleFrom(
+//                   shape: RoundedRectangleBorder(
+//                     borderRadius: BorderRadius.circular(20),
+//                   ),
+//                 ),
+//               ),
+//             ],
+//           ),
+//         ),
+//       ),
+//     );
+//   }
+// }
