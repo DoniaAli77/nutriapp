@@ -58,13 +58,13 @@ class _MyAppState extends State<MyApp> {
                   return LoadingScreen();
                 }
                 if (userSnapshot.hasData) {
-                  return HomePage();
+                  return MyHomePage();
                 }
                 return LoginScreen();
               },
             )
           : LoadingScreen(),
-        '/home': (ctx) => HomePage(),
+        '/home': (ctx) => MyHomePage(),
         '/login': (ctx) => LoginScreen(),
         '/loading': (ctx) => LoadingScreen(),
       },

@@ -1,98 +1,152 @@
-// import 'dart:io';
-// import 'package:flutter/material.dart';
-// import 'package:image_picker/image_picker.dart';
-// import 'package:google_ml_kit/google_ml_kit.dart';
+import 'dart:convert';
+import 'dart:io';
 
-// class CalorieTrackingPage extends StatefulWidget {
-//   @override
-//   _CalorieTrackingPageState createState() => _CalorieTrackingPageState();
-// }
+import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:http/http.dart' as http;
 
-// class _CalorieTrackingPageState extends State<CalorieTrackingPage> {
-//   File? _image;
-//   List<String> _labels = [];
-//   bool _isLoading = false;
+class TrackingPage extends StatefulWidget {
+  @override
+  _TrackingPageState createState() => _TrackingPageState();
+}
 
-//   final ImagePicker _picker = ImagePicker();
-//   final ImageLabeler _labeler = GoogleMlKit.vision.imageLabeler();
+class _TrackingPageState extends State<TrackingPage> {
+  final ImagePicker _picker = ImagePicker();
+  File? _imageFile;
+  String? _caloriesResult;
 
-//   Future<void> _pickImage() async {
-//     final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
-//     if (pickedFile != null) {
-//       setState(() {
-//         _image = File(pickedFile.path);
-//         _isLoading = true;
-//       });
-//       await _analyzeImage(_image!);
-//     }
-//   }
+  Future<void> _getImageFromCamera() async {
+    final XFile? image = await _picker.pickImage(source: ImageSource.camera);
+    if (image != null) {
+      setState(() {
+        _imageFile = File(image.path);
+      });
+      await _analyzeImage(_imageFile!);
+    }
+  }
 
-//   Future<void> _analyzeImage(File image) async {
-//     try {
-//       final InputImage visionImage = InputImage.fromFile(image);
-//       final List<ImageLabel> labels = await _labeler.processImage(visionImage);
+  Future<void> _getImageFromGallery() async {
+    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+    if (image != null) {
+      setState(() {
+        _imageFile = File(image.path);
+      });
+      await _analyzeImage(_imageFile!);
+    }
+  }
 
-//       setState(() {
-//         _labels = labels.map((label) => '${label.label} (${(label.confidence * 100).toStringAsFixed(2)}%)').toList();
-//         _isLoading = false;
-//       });
-//     } catch (e) {
-//       setState(() {
-//         _labels = ['Failed to analyze image.'];
-//         _isLoading = false;
-//       });
-//     }
-//   }
+  Future<void> _analyzeImage(File imageFile) async {
+    final apiKey = 'f74be6659c14426a9cb096de2ecf28c6'; // Replace with your actual API key
 
-//   @override
-//   void dispose() {
-//     _labeler.close();
-//     super.dispose();
-//   }
+    try {
+      final imageBytes = await imageFile.readAsBytes();
+      final base64Image = base64Encode(imageBytes);
 
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(
-//         title: Text('Calorie Tracking'),
-//       ),
-//       body: Center(
-//         child: SingleChildScrollView(
-//           padding: const EdgeInsets.all(16.0),
-//           child: Column(
-//             mainAxisAlignment: MainAxisAlignment.center,
-//             children: <Widget>[
-//               _image == null
-//                   ? Text('No image selected.')
-//                   : Image.file(_image!),
-//               SizedBox(height: 20),
-//               _isLoading
-//                   ? CircularProgressIndicator()
-//                   : _labels.isEmpty
-//                       ? Text(
-//                           'No labels available.',
-//                           style: TextStyle(fontSize: 16.0),
-//                         )
-//                       : Column(
-//                           children: _labels.map((label) => Text(
-//                             label,
-//                             style: TextStyle(fontSize: 16.0),
-//                           )).toList(),
-//                         ),
-//               SizedBox(height: 20),
-//               ElevatedButton(
-//                 onPressed: _pickImage,
-//                 child: Text('Pick Image'),
-//                 style: ElevatedButton.styleFrom(
-//                   shape: RoundedRectangleBorder(
-//                     borderRadius: BorderRadius.circular(20),
-//                   ),
-//                 ),
-//               ),
-//             ],
-//           ),
-//         ),
-//       ),
-//     );
-//   }
-// }
+      final response = await http.post(
+        Uri.parse('https://api.clarifai.com/v2/models/food-item-recognition/outputs'),
+        headers: {
+          'Authorization': 'Key $apiKey',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'inputs': [
+            {
+              'data': {
+                'image': {
+                  'base64': base64Image,
+                }
+              }
+            }
+          ],
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final concepts = data['outputs'][0]['data']['concepts'];
+        String description = concepts != null && concepts.isNotEmpty
+            ? concepts.map((concept) => concept['name']).join(', ')
+            : 'No food items detected';
+
+        setState(() {
+          _caloriesResult = description;
+        });
+        _showResultDialog();
+      } else {
+        _showErrorDialog('Failed to analyze image. Please try again later.');
+      }
+    } catch (e) {
+      print('Error analyzing image: $e');
+      _showErrorDialog('Failed to analyze image. Please try again later.');
+    }
+  }
+
+  Future<void> _showResultDialog() async {
+    await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Food Recognition Analysis'),
+          content: Text('Detected Food Items: $_caloriesResult'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Error'),
+          content: Text(message),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Tracking Page'),
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            ElevatedButton(
+              onPressed: _getImageFromCamera,
+              child: Text('Take a Picture'),
+            ),
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: _getImageFromGallery,
+              child: Text('Choose from Gallery'),
+            ),
+            if (_imageFile != null) ...[
+              SizedBox(height: 20),
+              Image.file(_imageFile!),
+            ],
+            if (_caloriesResult != null) ...[
+              SizedBox(height: 20),
+              Text('Detected Food Items: $_caloriesResult'),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
