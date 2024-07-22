@@ -58,6 +58,7 @@ class _TrackingPageState extends State<TrackingPage> {
 
   void printEstimatedCalories(String responseBody) {
     try {
+      
       // Decode the JSON response
       final Map<String, dynamic> jsonResponse = json.decode(responseBody);
 
