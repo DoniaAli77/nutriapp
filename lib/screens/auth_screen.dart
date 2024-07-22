@@ -108,7 +108,8 @@ try {
        
       authResult  = await authenticationInstance.createUserWithEmailAndPassword( 
           email: email, 
-          password: password, 
+          password: password,
+           
         ); 
  
         await FirebaseFirestore.instance 

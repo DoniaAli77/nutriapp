@@ -21,7 +21,7 @@ class _TrackingPageState extends State<TrackingPage> {
       setState(() {
         _imageFile = File(image.path);
       });
-      await _analyzeImage(_imageFile!);
+      await _analyzeImage(File(image.path));
     }
   }
 
@@ -31,52 +31,159 @@ class _TrackingPageState extends State<TrackingPage> {
       setState(() {
         _imageFile = File(image.path);
       });
-      await _analyzeImage(_imageFile!);
+      await _analyzeImage(File(image.path));
+    }
+  }
+
+  Future<String> encodeImage(String imagePath) async {
+    final imageBytes = await File(imagePath).readAsBytes();
+    return base64Encode(imageBytes);
+  }
+
+  String extractCaloriesFromContent(String content) {
+    // Define a regex pattern to find the word "calories" and capture the following number
+    final RegExp caloriesPattern =
+        RegExp(r'calories\s*[:\-\s]*([0-9,]+)', caseSensitive: false);
+
+    // Search for the pattern in the content
+    final match = caloriesPattern.firstMatch(content);
+
+    if (match != null) {
+      // Return the extracted calories (remove any commas for clarity)
+      return match.group(1)?.replaceAll(',', '') ?? 'Not found';
+    } else {
+      return 'Not found';
+    }
+  }
+
+  void printEstimatedCalories(String responseBody) {
+    try {
+      // Decode the JSON response
+      final Map<String, dynamic> jsonResponse = json.decode(responseBody);
+
+      // Navigate to the content
+      final choices = jsonResponse['choices'] as List<dynamic>;
+      if (choices.isNotEmpty) {
+        final choice = choices[0];
+        final message = choice['message'];
+        final content = message['content'];
+
+        // Extract and print the estimated calories
+        final estimatedCalories = extractCaloriesFromContent(content);
+        print('Estimated Calories: $estimatedCalories');
+      } else {
+        print('No choices available in the response.');
+      }
+    } catch (e) {
+      print('Error parsing response: $e');
+    }
+  }
+
+  double? parseCaloriesFromContent(String content) {
+    // Define a regex pattern to find the word "calories" and capture the following number
+    final RegExp caloriesPattern =
+        RegExp(r'calories\s*[:\-\s]*([0-9,]+)', caseSensitive: false);
+
+    // Search for the pattern in the content
+    final match = caloriesPattern.firstMatch(content);
+
+    if (match != null) {
+      // Extract the calories number and remove commas
+      final calorieString = match.group(1)?.replaceAll(',', '') ?? '';
+
+      // Convert the string to a double
+      return double.tryParse(calorieString);
+    } else {
+      return null; // No calories found
+    }
+  }
+
+  double? extractCaloriesFromResponse(String responseBody) {
+    try {
+      // Decode the JSON response
+      final Map<String, dynamic> jsonResponse = json.decode(responseBody);
+
+      // Navigate to the content
+      final choices = jsonResponse['choices'] as List<dynamic>;
+      if (choices.isNotEmpty) {
+        final choice = choices[0];
+        final message = choice['message'];
+        final content = message['content'];
+
+        // Extract the numeric value of calories
+        return parseCaloriesFromContent(content);
+      } else {
+        print('No choices available in the response.');
+        return null;
+      }
+    } catch (e) {
+      print('Error parsing response: $e');
+      return null;
     }
   }
 
   Future<void> _analyzeImage(File imageFile) async {
-    final apiKey = 'f74be6659c14426a9cb096de2ecf28c6'; // Replace with your actual API key
+    final String apiUrl = 'https://api.openai.com/v1/chat/completions';
 
     try {
-      final imageBytes = await imageFile.readAsBytes();
-      final base64Image = base64Encode(imageBytes);
+      String base64Image = await encodeImage(imageFile.path);
 
-      final response = await http.post(
-        Uri.parse('https://api.clarifai.com/v2/models/food-item-recognition/outputs'),
-        headers: {
-          'Authorization': 'Key $apiKey',
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({
-          'inputs': [
-            {
-              'data': {
-                'image': {
-                  'base64': base64Image,
-                }
-              }
-            }
-          ],
-        }),
+      // Define the request headers
+      final headers = {
+        'Content-Type': 'application/json',
+        'Authorization':
+            'Bearer sk-None-U3LU7EM3iqBRsHJ3XcSCT3BlbkFJ8dWolHAfc2niDFwapjzt',
+      };
+
+      // Define the payload
+      final payload = {
+        'model': 'gpt-4o-mini',
+        'messages': [
+          {
+            'role': 'user',
+            'content': [
+              {
+                'type': 'text',
+                'text':
+                    'Analyze this image and estimate the average calories of the food dish shown. Clearly write the word "calories" in your response, followed by the estimated number of calories'
+              },
+              {
+                'type': 'image_url',
+                'image_url': {
+                  'url': 'data:image/jpeg;base64,$base64Image',
+                },
+              },
+            ],
+          },
+        ],
+        'max_tokens': 300,
+      };
+
+      // Send the POST request
+      var response = await http.post(
+        Uri.parse('https://api.openai.com/v1/chat/completions'),
+        headers: headers,
+        body: json.encode(payload),
       );
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final concepts = data['outputs'][0]['data']['concepts'];
-        String description = concepts != null && concepts.isNotEmpty
-            ? concepts.map((concept) => concept['name']).join(', ')
-            : 'No food items detected';
+      // Print the response
+      print('hi');
+      print(response.body);
+      final estimatedCalories = extractCaloriesFromResponse(response.body);
+      if(estimatedCalories==null){
+          _showErrorDialog('Calories information not found in the response.');
 
-        setState(() {
-          _caloriesResult = description;
-        });
-        _showResultDialog();
-      } else {
-        _showErrorDialog('Failed to analyze image. Please try again later.');
       }
+      else{
+      setState(() {
+        _caloriesResult = estimatedCalories.toString();
+      });
+      print('Estimated Calories: $estimatedCalories');
+      _showResultDialog();
+      }
+
     } catch (e) {
-      print('Error analyzing image: $e');
+      print('Error: $e');
       _showErrorDialog('Failed to analyze image. Please try again later.');
     }
   }
@@ -86,8 +193,8 @@ class _TrackingPageState extends State<TrackingPage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Food Recognition Analysis'),
-          content: Text('Detected Food Items: $_caloriesResult'),
+          title: Text('Calories Analysis'),
+          content: Text('Estimated Calories: $_caloriesResult'),
           actions: <Widget>[
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
@@ -142,7 +249,7 @@ class _TrackingPageState extends State<TrackingPage> {
             ],
             if (_caloriesResult != null) ...[
               SizedBox(height: 20),
-              Text('Detected Food Items: $_caloriesResult'),
+              Text('Estimated Calories: $_caloriesResult'),
             ],
           ],
         ),
