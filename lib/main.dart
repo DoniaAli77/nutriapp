@@ -1,6 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart'; 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:nutriapp/models/calorie_model.dart';
+import 'package:nutriapp/screens/Goal.dart';
 import 'package:nutriapp/screens/home_page.dart'; 
 import 'firebase_options.dart';
 import 'screens/auth_screen.dart';
@@ -59,14 +61,17 @@ class _MyAppState extends State<MyApp> {
                 }
                 if (userSnapshot.hasData) {
                   return HomePage();
+              
                 }
-                return LoginScreen();
+               return LoginScreen();
+                 //    return HomePage();
               },
             )
           : LoadingScreen(),
         '/home': (ctx) => HomePage(),
         '/login': (ctx) => LoginScreen(),
         '/loading': (ctx) => LoadingScreen(),
+       '/goal':(ctx) => Goal()
       },
     ); 
   } 
