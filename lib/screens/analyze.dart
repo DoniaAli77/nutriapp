@@ -14,7 +14,7 @@ class _AnalyzePageState extends State<AnalyzePage> {
   Future<void> _fetchDataFromOpenAI(
       weight, height, Gender, FutureWeight, MedicalHistory, Age) async {
     final apiKey =
-        'sk-None-Zd0yXl5OUaAlgjKlTy9gT3BlbkFJY4FoVU5ODzcguDt4MyCI'; // Replace with your actual OpenAI API key
+        'sk-None-nRV1GXV9d4vQUjaVxybET3BlbkFJaXPiaHYkrSAMgJR5exoe'; // Replace with your actual OpenAI API key
     final url =
         'https://api.openai.com/v1/chat/completions'; // Replace with your actual OpenAI endpoint
 

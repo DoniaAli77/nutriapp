@@ -27,11 +27,10 @@ class _TrackingPageState extends State<TrackingPage> {
         .collection("users")
         .doc(currentUserId)
         .get();
-
+    print('hiiiiiiiiii') ;   
+    print( double.parse(userData.data()!["Total_Daily_Calories"]));
     FirebaseFirestore.instance.collection("users").doc(currentUserId).set({
-      "email": 'donia.al@gmail.com',
-      'username': "do",
-      "calories": userData.data()!["Total_Daily_Calories"] - double.parse(_caloriesResult!),
+      "Total_Daily_Calories": double.parse(userData.data()!["Total_Daily_Calories"]) - double.parse(_caloriesResult!),
     }, SetOptions(merge: true)).then((_) => setState(() {
           add = true;
         }));
@@ -135,7 +134,7 @@ class _TrackingPageState extends State<TrackingPage> {
       final headers = {
         'Content-Type': 'application/json',
         'Authorization':
-            'Bearer sk-None-Zd0yXl5OUaAlgjKlTy9gT3BlbkFJY4FoVU5ODzcguDt4MyCI',
+            'Bearer sk-None-nRV1GXV9d4vQUjaVxybET3BlbkFJaXPiaHYkrSAMgJR5exoe',
       };
 
       final payload = {
