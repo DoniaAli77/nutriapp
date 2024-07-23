@@ -1,9 +1,12 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
+import 'package:nutriapp/screens/loadingScreen.dart';
 
 class TrackingPage extends StatefulWidget {
   @override
@@ -14,6 +17,25 @@ class _TrackingPageState extends State<TrackingPage> {
   final ImagePicker _picker = ImagePicker();
   File? _imageFile;
   String? _caloriesResult;
+  final auth = FirebaseAuth.instance;
+  var add = false;
+
+  void addCalories() async {
+    var currentUserId = FirebaseAuth.instance.currentUser!.uid;
+    print(currentUserId);
+    var userData = await FirebaseFirestore.instance
+        .collection("users")
+        .doc(currentUserId)
+        .get();
+
+    FirebaseFirestore.instance.collection("users").doc(currentUserId).set({
+      "email": 'donia.al@gmail.com',
+      'username': "do",
+      "calories": userData.data()!["calories"] - double.parse(_caloriesResult!),
+    }, SetOptions(merge: true)).then((_) => setState(() {
+          add = true;
+        }));
+  }
 
   Future<void> _getImageFromCamera() async {
     final XFile? image = await _picker.pickImage(source: ImageSource.camera);
@@ -41,15 +63,11 @@ class _TrackingPageState extends State<TrackingPage> {
   }
 
   String extractCaloriesFromContent(String content) {
-    // Define a regex pattern to find the word "calories" and capture the following number
     final RegExp caloriesPattern =
         RegExp(r'calories\s*[:\-\s]*([0-9,]+)', caseSensitive: false);
-
-    // Search for the pattern in the content
     final match = caloriesPattern.firstMatch(content);
 
     if (match != null) {
-      // Return the extracted calories (remove any commas for clarity)
       return match.group(1)?.replaceAll(',', '') ?? 'Not found';
     } else {
       return 'Not found';
@@ -58,18 +76,13 @@ class _TrackingPageState extends State<TrackingPage> {
 
   void printEstimatedCalories(String responseBody) {
     try {
-      
-      // Decode the JSON response
       final Map<String, dynamic> jsonResponse = json.decode(responseBody);
-
-      // Navigate to the content
+      print(jsonResponse);
       final choices = jsonResponse['choices'] as List<dynamic>;
       if (choices.isNotEmpty) {
         final choice = choices[0];
         final message = choice['message'];
         final content = message['content'];
-
-        // Extract and print the estimated calories
         final estimatedCalories = extractCaloriesFromContent(content);
         print('Estimated Calories: $estimatedCalories');
       } else {
@@ -81,37 +94,27 @@ class _TrackingPageState extends State<TrackingPage> {
   }
 
   double? parseCaloriesFromContent(String content) {
-    // Define a regex pattern to find the word "calories" and capture the following number
     final RegExp caloriesPattern =
         RegExp(r'calories\s*[:\-\s]*([0-9,]+)', caseSensitive: false);
-
-    // Search for the pattern in the content
     final match = caloriesPattern.firstMatch(content);
 
     if (match != null) {
-      // Extract the calories number and remove commas
       final calorieString = match.group(1)?.replaceAll(',', '') ?? '';
-
-      // Convert the string to a double
       return double.tryParse(calorieString);
     } else {
-      return null; // No calories found
+      return null;
     }
   }
 
   double? extractCaloriesFromResponse(String responseBody) {
     try {
-      // Decode the JSON response
       final Map<String, dynamic> jsonResponse = json.decode(responseBody);
-
-      // Navigate to the content
+      print(jsonResponse);
       final choices = jsonResponse['choices'] as List<dynamic>;
       if (choices.isNotEmpty) {
         final choice = choices[0];
         final message = choice['message'];
         final content = message['content'];
-
-        // Extract the numeric value of calories
         return parseCaloriesFromContent(content);
       } else {
         print('No choices available in the response.');
@@ -129,14 +132,12 @@ class _TrackingPageState extends State<TrackingPage> {
     try {
       String base64Image = await encodeImage(imageFile.path);
 
-      // Define the request headers
       final headers = {
         'Content-Type': 'application/json',
         'Authorization':
-            'Bearer sk-None-U3LU7EM3iqBRsHJ3XcSCT3BlbkFJ8dWolHAfc2niDFwapjzt',
+            'Bearer sk-None-zlMFcw87RDICYqW68fBPT3BlbkFJtUvH8Ga3P6iwyZg5pO5M',
       };
 
-      // Define the payload
       final payload = {
         'model': 'gpt-4o-mini',
         'messages': [
@@ -160,29 +161,22 @@ class _TrackingPageState extends State<TrackingPage> {
         'max_tokens': 300,
       };
 
-      // Send the POST request
       var response = await http.post(
         Uri.parse('https://api.openai.com/v1/chat/completions'),
         headers: headers,
         body: json.encode(payload),
       );
 
-      // Print the response
-      print('hi');
-      print(response.body);
       final estimatedCalories = extractCaloriesFromResponse(response.body);
-      if(estimatedCalories==null){
-          _showErrorDialog('Calories information not found in the response.');
-
+      if (estimatedCalories == null) {
+        _showErrorDialog('Calories information not found in the response.');
+      } else {
+        setState(() {
+          _caloriesResult = estimatedCalories.toString();
+        });
+        print('Estimated Calories: $estimatedCalories');
+        // _showResultDialog();
       }
-      else{
-      setState(() {
-        _caloriesResult = estimatedCalories.toString();
-      });
-      print('Estimated Calories: $estimatedCalories');
-      _showResultDialog();
-      }
-
     } catch (e) {
       print('Error: $e');
       _showErrorDialog('Failed to analyze image. Please try again later.');
@@ -225,34 +219,132 @@ class _TrackingPageState extends State<TrackingPage> {
     );
   }
 
+  void _showImageSourceDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return SimpleDialog(
+          title: Text('Choose an option'),
+          children: <Widget>[
+            SimpleDialogOption(
+              onPressed: () {
+                Navigator.pop(context);
+                _getImageFromCamera();
+              },
+              child: Row(
+                children: [
+                  Icon(Icons.camera_alt),
+                  SizedBox(width: 8),
+                  Text('Take a Picture'),
+                ],
+              ),
+            ),
+            SimpleDialogOption(
+              onPressed: () {
+                Navigator.pop(context);
+                _getImageFromGallery();
+              },
+              child: Row(
+                children: [
+                  Icon(Icons.photo_library),
+                  SizedBox(width: 8),
+                  Text('Choose from Gallery'),
+                ],
+              ),
+            ),
+            SimpleDialogOption(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: Row(
+                children: [
+                  SizedBox(width: 8),
+                  Text('Cancel'),
+                ],
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Tracking Page'),
+        title: Text('Track your Calories'),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _showImageSourceDialog,
+        child: Icon(Icons.add),
       ),
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            ElevatedButton(
-              onPressed: _getImageFromCamera,
-              child: Text('Take a Picture'),
+        child: Hero(
+          tag: 'hero',
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    'Scan the Dish image to show calories',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  if (_imageFile != null) ...[
+                    SizedBox(height: 20),
+                    Text(
+                      'Scanned Dish',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: 20),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12.0),
+                      child: Image.file(
+                        _imageFile!,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ],
+                  if (_imageFile != null && _caloriesResult == null) ...[
+                    SizedBox(height: 20),
+                    Text('analyzing your dish..'),
+                    SizedBox(height: 20),
+                    CircularProgressIndicator(),
+                  ],
+                  if (_caloriesResult != null) ...[
+                    SizedBox(height: 20),
+                    Text(
+                      'Estimated Calories: $_caloriesResult',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.red,
+                      ),
+                    ),
+                    SizedBox(height: 20),
+                    ElevatedButton(
+                        onPressed: add ? null : addCalories,
+                        child: Text('Add to my calories'))
+                  ],
+                  if (add) ...[
+                    Text(
+                      'added succesfully',
+                      style: TextStyle(color: Colors.green),
+                    )
+                  ]
+                ],
+              ),
             ),
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _getImageFromGallery,
-              child: Text('Choose from Gallery'),
-            ),
-            if (_imageFile != null) ...[
-              SizedBox(height: 20),
-              Image.file(_imageFile!),
-            ],
-            if (_caloriesResult != null) ...[
-              SizedBox(height: 20),
-              Text('Estimated Calories: $_caloriesResult'),
-            ],
-          ],
+          ),
         ),
       ),
     );

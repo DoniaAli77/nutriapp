@@ -3,20 +3,64 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 
 import 'calorie_tracking_page.dart';
 
-class MyHomePage extends StatelessWidget {
+class MyHomePage extends HookWidget {
   @override
-    final auth = FirebaseAuth.instance; 
-
+  
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Calorie Tracker'),
-         actions: [
+    Future<Map<String, dynamic>> getuserinfo() async {
+      try {
+        var userId = FirebaseAuth.instance.currentUser!.uid;
+        var userData = await FirebaseFirestore.instance
+            .collection("users")
+            .doc(userId)
+            .get();
+
+        if (userData.exists) {
+          return userData.data()!;
+        } else {
+          return {'Error': 'nodata'};
+        }
+      } catch (e) {
+        print("Error getting document: $e");
+        return {
+          "Error": "Error getting document"
+        };
+      }
+    }
+
+    final userCalorie = useState(0.0);
+    final userdata = useFuture(useMemoized(getuserinfo, []));
+
+    if (userdata.connectionState == ConnectionState.waiting) {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text('Calorie Tracker'),
+        ),
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    } else if (userdata.hasError) {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text('Calorie Tracker'),
+        ),
+        body: Center(
+          child: Text('Error: ${userdata.error}'),
+        ),
+      );
+    } else if (userdata.hasData) {
+      userCalorie.value = userdata.data!['calories'];
+
+      return Scaffold(
+        appBar: AppBar(
+          title: Text('Calorie Tracker'),
+          actions: [
             Container(
-              margin: EdgeInsets.only(right: 30),
               child: IconButton(
                   onPressed: () {
                     FirebaseAuth.instance.signOut();
@@ -24,99 +68,131 @@ class MyHomePage extends StatelessWidget {
                   icon: Icon(Icons.logout_rounded)),
             )
           ],
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: ListView.builder(
-          itemCount: 9, // Adjust based on the number of items you want to display
-          itemBuilder: (context, index) {
-            switch (index) {
-              case 0:
-                return Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text('12:23', style: TextStyle(fontSize: 24)),
-                        Icon(Icons.notifications),
-                      ],
-                    ),
-                    SizedBox(height: 20),
-                    Center(
-                      child: Column(
+        ),
+        body: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: ListView.builder(
+            itemCount: 9,
+            itemBuilder: (context, index) {
+              switch (index) {
+                case 0:
+                  return Column(
+                    children: [
+                      SizedBox(height: 20),
+                      Center(
+                        child: Column(
+                          children: [
+                            Text(userCalorie.value.toString(),
+                                style: TextStyle(fontSize: 48)),
+                            Text('Cal Left', style: TextStyle(fontSize: 18)),
+                          ],
+                        ),
+                      ),
+                      SizedBox(height: 20),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
-                          Text('1783', style: TextStyle(fontSize: 48)),
-                          Text('Cal Left', style: TextStyle(fontSize: 18)),
+                          Column(
+                            children: [
+                              Text('0', style: TextStyle(fontSize: 24)),
+                              Text('Eaten', style: TextStyle(fontSize: 18)),
+                            ],
+                          ),
+                          Column(
+                            children: [
+                              Text('0', style: TextStyle(fontSize: 24)),
+                              Text('Burned', style: TextStyle(fontSize: 18)),
+                            ],
+                          ),
                         ],
                       ),
-                    ),
-                    SizedBox(height: 20),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        Column(
-                          children: [
-                            Text('0', style: TextStyle(fontSize: 24)),
-                            Text('Eaten', style: TextStyle(fontSize: 18)),
-                          ],
-                        ),
-                        Column(
-                          children: [
-                            Text('0', style: TextStyle(fontSize: 24)),
-                            Text('Burned', style: TextStyle(fontSize: 18)),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ],
-                );
-              case 1:
-                return SizedBox(height: 20);
-              case 2:
-                return Divider();
-              case 3:
-                return SizedBox(height: 20);
-              case 4:
-                return DietPlanCard();
-              case 5:
-                return SizedBox(height: 20);
-              case 6:
-                return SuggestedRecipes();
-              case 7:
-                return Column(
-                  children: [
-                    SizedBox(height: 20),
-                    MealCard(mealType: 'Breakfast', calories: 534, food: 'Kofta (0 Cal)'),
-                    SizedBox(height: 10),
-                    MealCard(mealType: 'Lunch', calories: 534),
-                    SizedBox(height: 10),
-                    MealCard(mealType: 'Dinner', calories: 534),
-                    SizedBox(height: 20),
-                    ElevatedButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => TrackingPage()),
-                        );
-                      },
-                      child: Text('Scan Image for Calories'),
-                    ),
-                  ],
-                );
-              default:
-                return SizedBox.shrink();
-            }
-          },
+                    ],
+                  );
+                case 1:
+                  return SizedBox(height: 20);
+                case 2:
+                  return Divider();
+                case 3:
+                  return SizedBox(height: 20);
+                case 4:
+                  return DietPlanCard();
+                case 5:
+                  return SizedBox(height: 20);
+                case 6:
+                  return SuggestedRecipes();
+                case 7:
+                  return Column(
+                    children: [
+                      SizedBox(height: 20),
+                      MealCard(
+                          mealType: 'Breakfast',
+                          calories: 534,
+                          food: 'Kofta (0 Cal)'),
+                      SizedBox(height: 10),
+                      MealCard(mealType: 'Lunch', calories: 534),
+                      SizedBox(height: 10),
+                      MealCard(mealType: 'Dinner', calories: 534),
+                      SizedBox(height: 20),
+                      // Hero(
+                      //   tag: 'hero',
+                      //   child: ElevatedButton(
+                      //     onPressed: () {
+                      //       Navigator.pushNamed(context, '/calorie');
+                      //     },
+                      //     child: Text('Scan Image for Calories'),
+                      //   ),
+                      // ),
+                    ],
+                  );
+                default:
+                  return SizedBox.shrink();
+              }
+            },
+          ),
         ),
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        items: [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Coach'),
-          BottomNavigationBarItem(icon: Icon(Icons.book), label: 'Journal'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
-        ],
-      ),
-    );
+        bottomNavigationBar: Hero(
+          tag: 'hero',
+          child: BottomNavigationBar(
+             onTap: (index) {
+              if (index == 1) {
+                Navigator.pushNamed(
+                  context,
+                  '/calorie');
+                
+              }
+              if (index == 2) {
+                Navigator.pushNamed(
+                  context,
+                  '/profile');
+                
+              }
+              if (index == 3) {
+                Navigator.pushNamed(
+                  context,
+                  '/analyze');
+                
+              }
+            },
+            items: [
+              BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Coach'),
+              BottomNavigationBarItem(icon: Icon(Icons.upload), label: 'Scan'),
+              BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+                BottomNavigationBarItem(icon: Icon(Icons.search), label: 'ana'),
+
+            ],
+          ),
+        ),
+      );
+    } else {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text('Calorie Tracker'),
+        ),
+        body: Center(
+          child: Text('Unexpected state'),
+        ),
+      );
+    }
   }
 }
 
@@ -135,7 +211,9 @@ class DietPlanCard extends StatelessWidget {
             ),
             SizedBox(height: 10),
             StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance.collection('diet_plans').snapshots(),
+              stream: FirebaseFirestore.instance
+                  .collection('diet_plans')
+                  .snapshots(),
               builder: (context, snapshot) {
                 if (!snapshot.hasData) {
                   return CircularProgressIndicator();
@@ -192,7 +270,8 @@ class SuggestedRecipes extends StatelessWidget {
             ),
             SizedBox(height: 10),
             StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance.collection('recipes').snapshots(),
+              stream:
+                  FirebaseFirestore.instance.collection('recipes').snapshots(),
               builder: (context, snapshot) {
                 if (!snapshot.hasData) {
                   return CircularProgressIndicator();
@@ -224,7 +303,8 @@ class RecipeCard extends StatelessWidget {
   RecipeCard({required this.image, required this.name, required this.calories});
 
   Future<void> addCalories(int caloriesToAdd) async {
-    final docRef = FirebaseFirestore.instance.collection('calories').doc('today');
+    final docRef =
+        FirebaseFirestore.instance.collection('calories').doc('today');
     final snapshot = await docRef.get();
     if (snapshot.exists) {
       int currentCalories = snapshot.data()!['calories'] ?? 0;
