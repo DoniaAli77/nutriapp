@@ -1,21 +1,14 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-
 import 'package:firebase_auth/firebase_auth.dart';
-
 import 'package:firebase_core/firebase_core.dart';
-
 import 'package:flutter/material.dart';
-
 import 'package:lottie/lottie.dart';
-
 import 'package:animations/animations.dart';
-
 import 'package:nutriapp/screens/Goal.dart';
-
+import 'package:nutriapp/screens/SetGoalOrPass.dart';
 import 'package:nutriapp/screens/home_page.dart';
-
 import 'package:nutriapp/screens/loadingScreen.dart';
-
+import 'package:nutriapp/screens/login_page.dart';
 import 'calorie_tracking_page.dart';
 
 
@@ -92,9 +85,7 @@ class HomePage extends StatelessWidget {
 
         String name = userData.data()!["username"];
 
-        print('hi');
-
-        print(name);
+      
 
         return name; // Document exists
 
@@ -119,18 +110,18 @@ class HomePage extends StatelessWidget {
 
   Widget build(BuildContext context) {
 
-    User? user = FirebaseAuth.instance.currentUser;
+     User? user = FirebaseAuth.instance.currentUser;
 
-    // String displayName = user?.displayName ?? 'Guest';
+    // // String displayName = user?.displayName ?? 'Guest';
 
-    //  String displayName = user != null ? 'Guest' : 'Anonymous';
+    // //  String displayName = user != null ? 'Guest' : 'Anonymous';
 
-    var Name = '';
+     var Name = 'eman';
 
-    GetUserName(user!.uid).then((x) => Name = x);
+   GetUserName(user!.uid).then((x) => Name = x);
 
-    String UserId = user.uid;
-
+   String UserId = user.uid;
+  //  String UserId = "12345";
     return Scaffold(
 
       appBar: AppBar(
@@ -156,19 +147,25 @@ class HomePage extends StatelessWidget {
               closedBuilder: (context, action) => ElevatedButton(
 
                 onPressed: () async {
-
+ //onPressed: ()  {
                   bool userExists = await checkUserExistInGoals(UserId);
 
-
-
-
+                  
                   if (userExists) {
 
-                    Navigator.push(
+                   Navigator.pushNamed(
 
                       context,
 
-                      MaterialPageRoute(builder: (context) => MyHomePage()),
+                      '/setorpass',
+
+                      arguments: <String, String>{
+
+                        'UserId': UserId,
+
+                        'Name': Name.toString()
+
+                      },
 
                     );
 
@@ -185,6 +182,24 @@ class HomePage extends StatelessWidget {
                       ),
 
                     );
+
+                    Navigator.pushNamed(
+
+                      context,
+
+                      '/goal',
+
+                      arguments: <String, String>{
+
+                        'UserId': UserId,
+
+                        'Name': Name.toString()
+
+                      },
+
+                    );
+
+                  }
 
                 },
 
