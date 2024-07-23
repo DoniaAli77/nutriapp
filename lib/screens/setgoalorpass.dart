@@ -39,9 +39,9 @@ class Setgoalorpass extends StatelessWidget {
                 child: ElevatedButton(
                   onPressed: () {
 // Add your logic for staying with the same goal
-                    Navigator.pushNamed(
+                    Navigator.popAndPushNamed(
                       context,
-                      '/PersonalDetailsPage',
+                      '/home',
                       arguments: <String, String>{
                         'UserId': userId,
                         'Name': UserName.toString()

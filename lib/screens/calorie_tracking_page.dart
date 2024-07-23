@@ -275,7 +275,7 @@ class _TrackingPageState extends State<TrackingPage> {
         title: Text('Track your Calories'),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _showImageSourceDialog,
+        onPressed: add ? ()=>  Navigator.pushReplacementNamed(context, '/profile') : _showImageSourceDialog,
         child: Icon(Icons.add),
       ),
       body: Center(
