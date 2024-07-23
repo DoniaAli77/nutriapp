@@ -1,17 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 
-import 'calorie_tracking_page.dart';
-
 class MyHomePage extends HookWidget {
   @override
-  
   Widget build(BuildContext context) {
-    Future<Map<String, dynamic>> getuserinfo() async {
+    Future<Map<String, dynamic>> getUserInfo() async {
       try {
         var userId = FirebaseAuth.instance.currentUser!.uid;
         var userData = await FirebaseFirestore.instance
@@ -26,14 +22,12 @@ class MyHomePage extends HookWidget {
         }
       } catch (e) {
         print("Error getting document: $e");
-        return {
-          "Error": "Error getting document"
-        };
+        return {"Error": "Error getting document"};
       }
     }
 
     final userCalorie = useState(0.0);
-    final userdata = useFuture(useMemoized(getuserinfo, []));
+    final userdata = useFuture(useMemoized(getUserInfo, []));
 
     if (userdata.connectionState == ConnectionState.waiting) {
       return Scaffold(
@@ -54,7 +48,8 @@ class MyHomePage extends HookWidget {
         ),
       );
     } else if (userdata.hasData) {
-      userCalorie.value = userdata.data!['calories'];
+      userCalorie.value =
+          double.parse(userdata.data!['Total_Daily_Calories'] ?? '0.0');
 
       return Scaffold(
         appBar: AppBar(
@@ -71,114 +66,75 @@ class MyHomePage extends HookWidget {
         ),
         body: Padding(
           padding: const EdgeInsets.all(16.0),
-          child: ListView.builder(
-            itemCount: 9,
-            itemBuilder: (context, index) {
-              switch (index) {
-                case 0:
-                  return Column(
+          child: ListView(
+            children: [
+              SizedBox(height: 20),
+              Center(
+                child: Column(
+                  children: [
+                    Text(userCalorie.value.toString(),
+                        style: TextStyle(fontSize: 48)),
+                    Text('Cal Left', style: TextStyle(fontSize: 18)),
+                  ],
+                ),
+              ),
+              SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  Column(
                     children: [
-                      SizedBox(height: 20),
-                      Center(
-                        child: Column(
-                          children: [
-                            Text(userCalorie.value.toString(),
-                                style: TextStyle(fontSize: 48)),
-                            Text('Cal Left', style: TextStyle(fontSize: 18)),
-                          ],
-                        ),
-                      ),
-                      SizedBox(height: 20),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          Column(
-                            children: [
-                              Text('0', style: TextStyle(fontSize: 24)),
-                              Text('Eaten', style: TextStyle(fontSize: 18)),
-                            ],
-                          ),
-                          Column(
-                            children: [
-                              Text('0', style: TextStyle(fontSize: 24)),
-                              Text('Burned', style: TextStyle(fontSize: 18)),
-                            ],
-                          ),
-                        ],
-                      ),
+                      Text('0', style: TextStyle(fontSize: 24)),
+                      Text('Eaten', style: TextStyle(fontSize: 18)),
                     ],
-                  );
-                case 1:
-                  return SizedBox(height: 20);
-                case 2:
-                  return Divider();
-                case 3:
-                  return SizedBox(height: 20);
-                case 4:
-                  return DietPlanCard();
-                case 5:
-                  return SizedBox(height: 20);
-                case 6:
-                  return SuggestedRecipes();
-                case 7:
-                  return Column(
+                  ),
+                  Column(
                     children: [
-                      SizedBox(height: 20),
-                      MealCard(
-                          mealType: 'Breakfast',
-                          calories: 534,
-                          food: 'Kofta (0 Cal)'),
-                      SizedBox(height: 10),
-                      MealCard(mealType: 'Lunch', calories: 534),
-                      SizedBox(height: 10),
-                      MealCard(mealType: 'Dinner', calories: 534),
-                      SizedBox(height: 20),
-                      // Hero(
-                      //   tag: 'hero',
-                      //   child: ElevatedButton(
-                      //     onPressed: () {
-                      //       Navigator.pushNamed(context, '/calorie');
-                      //     },
-                      //     child: Text('Scan Image for Calories'),
-                      //   ),
-                      // ),
+                      Text('0', style: TextStyle(fontSize: 24)),
+                      Text('Burned', style: TextStyle(fontSize: 18)),
                     ],
-                  );
-                default:
-                  return SizedBox.shrink();
-              }
-            },
+                  ),
+                ],
+              ),
+              SizedBox(height: 20),
+              Divider(),
+              SizedBox(height: 20),
+              DietPlanCard(),
+              SizedBox(height: 20),
+              SuggestedRecipes(),
+              SizedBox(height: 20),
+              Column(
+                children: [
+                  MealCard(
+                      mealType: 'Breakfast',
+                      calories: 534,
+                      food: 'Kofta (0 Cal)'),
+                  SizedBox(height: 10),
+                  MealCard(mealType: 'Lunch', calories: 534),
+                  SizedBox(height: 10),
+                  MealCard(mealType: 'Dinner', calories: 534),
+                  SizedBox(height: 20),
+                ],
+              ),
+            ],
           ),
         ),
         bottomNavigationBar: Hero(
           tag: 'hero',
           child: BottomNavigationBar(
-             onTap: (index) {
+            onTap: (index) {
               if (index == 1) {
-                Navigator.pushNamed(
-                  context,
-                  '/calorie');
-                
+                Navigator.pushNamed(context, '/calorie');
               }
               if (index == 2) {
-                Navigator.pushNamed(
-                  context,
-                  '/profile');
-                
-              }
-              if (index == 3) {
-                Navigator.pushNamed(
-                  context,
-                  '/analyze');
-                
+                Navigator.pushNamed(context, '/profile');
               }
             },
             items: [
               BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Coach'),
               BottomNavigationBarItem(icon: Icon(Icons.upload), label: 'Scan'),
-              BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
-                BottomNavigationBarItem(icon: Icon(Icons.search), label: 'ana'),
-
+              BottomNavigationBarItem(
+                  icon: Icon(Icons.person), label: 'Profile'),
             ],
           ),
         ),
@@ -199,33 +155,46 @@ class MyHomePage extends HookWidget {
 class DietPlanCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final userId = FirebaseAuth.instance.currentUser!.uid;
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Text('Diet Plan', style: TextStyle(fontSize: 18)),
-              ],
-            ),
+            Text('Diet Plan', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             SizedBox(height: 10),
-            StreamBuilder<QuerySnapshot>(
+            StreamBuilder<DocumentSnapshot>(
               stream: FirebaseFirestore.instance
-                  .collection('diet_plans')
+                  .collection('plans')
+                  .doc(userId)
                   .snapshots(),
               builder: (context, snapshot) {
                 if (!snapshot.hasData) {
-                  return CircularProgressIndicator();
+                  return Center(child: CircularProgressIndicator());
                 }
-                final plans = snapshot.data!.docs;
-                return Column(
-                  children: plans.map((plan) {
-                    return DietPlanWeek(
-                      week: plan['week'],
-                      description: plan['description'],
-                    );
-                  }).toList(),
+                if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                }
+                final data = snapshot.data!.data() as Map<String, dynamic>? ?? {};
+                final weeks = data['weeks'] as Map<String, dynamic>? ?? {};
+
+                return Container(
+                  height: 300,  // Adjust the height as needed
+                  child: PageView.builder(
+                    itemCount: weeks.length,
+                    itemBuilder: (context, index) {
+                      final weekKey = weeks.keys.elementAt(index);
+                      final weekData = weeks[weekKey] as Map<String, dynamic>? ?? {};
+                      return DietPlanWeek(
+                        week: weekKey,
+                        totalCalories: weekData['Total Weekly Calories'] ?? 'N/A',
+                        dailyMeals: weekData['Daily Meals'] as Map<String, dynamic>? ?? {},
+                        mealRecipes: weekData['Meal Recipes'] as Map<String, dynamic>? ?? {},
+                      );
+                    },
+                  ),
                 );
               },
             ),
@@ -238,19 +207,83 @@ class DietPlanCard extends StatelessWidget {
 
 class DietPlanWeek extends StatelessWidget {
   final String week;
-  final String description;
+  final String totalCalories;
+  final Map<String, dynamic> dailyMeals;
+  final Map<String, dynamic> mealRecipes;
 
-  DietPlanWeek({required this.week, required this.description});
+  DietPlanWeek({
+    required this.week,
+    required this.totalCalories,
+    required this.dailyMeals,
+    required this.mealRecipes,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(week, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-        Text(description, style: TextStyle(fontSize: 14, color: Colors.grey)),
-        SizedBox(height: 10),
-      ],
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              week,
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Total Weekly Calories: $totalCalories',
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 16),
+            Text(
+              'Daily Meals:',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            ...dailyMeals.entries.map((entry) {
+              final day = entry.key;
+              final meals = entry.value as Map<String, dynamic>? ?? {};
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(height: 8),
+                  Text(day, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                  Text('Breakfast: ${meals['Breakfast'] ?? 'N/A'}'),
+                  Text('Lunch: ${meals['Lunch'] ?? 'N/A'}'),
+                  Text('Dinner: ${meals['Dinner'] ?? 'N/A'}'),
+                  Text('Snack: ${meals['Snack'] ?? 'N/A'}'),
+                ],
+              );
+            }).toList(),
+            SizedBox(height: 16),
+            Text(
+              'Meal Recipes:',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            Container(
+              height: 200,  // Adjust the height as needed
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: mealRecipes.length,
+                itemBuilder: (context, index) {
+                  final mealType = mealRecipes.keys.elementAt(index);
+                  final recipe = mealRecipes[mealType] as Map<String, dynamic>? ?? {};
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                    child: RecipeCard(
+                      name: recipe['meal_name'] ?? 'No name',
+                      ingredients: recipe['Ingredients'] ?? 'No ingredients',
+                      instructions: recipe['Instructions'] ?? 'No instructions',
+                      totalCalories:recipe['total calories for this meal'] ?? 'No total',
+
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -258,33 +291,49 @@ class DietPlanWeek extends StatelessWidget {
 class SuggestedRecipes extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final userId = FirebaseAuth.instance.currentUser!.uid;
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Text('Suggested Recipes', style: TextStyle(fontSize: 18)),
-              ],
-            ),
+            Text('Suggested Recipes', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             SizedBox(height: 10),
-            StreamBuilder<QuerySnapshot>(
-              stream:
-                  FirebaseFirestore.instance.collection('recipes').snapshots(),
+            StreamBuilder<DocumentSnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('suggested_recipes')
+                  .doc(userId)
+                  .snapshots(),
               builder: (context, snapshot) {
                 if (!snapshot.hasData) {
-                  return CircularProgressIndicator();
+                  return Center(child: CircularProgressIndicator());
                 }
-                final recipes = snapshot.data!.docs;
-                return Column(
-                  children: recipes.map((recipe) {
-                    return RecipeCard(
-                      image: recipe['image'],
-                      name: recipe['name'],
-                      calories: recipe['calories'],
-                    );
-                  }).toList(),
+                if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                }
+                final data = snapshot.data!.data() as Map<String, dynamic>? ?? {};
+                final recipes = data.entries.toList();
+
+                return Container(
+                  color: Colors.white,
+                  height: 200,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: recipes.length,
+                    reverse: true,
+                    itemBuilder: (context, index) {
+                      final recipeData = recipes[index].value as Map<String, dynamic>? ?? {};
+                      print(recipeData);
+                      return RecipeCard(
+                        name: recipeData['recipe_name'] ?? 'No name',
+                        ingredients: recipeData['Ingredients'] ?? 'No ingredients',
+                        instructions: recipeData['Instructions'] ?? 'No instructions',
+                        totalCalories:recipeData['total calories'] ?? 'No total',
+                      );
+                    },
+                  ),
                 );
               },
             ),
@@ -296,34 +345,84 @@ class SuggestedRecipes extends StatelessWidget {
 }
 
 class RecipeCard extends StatelessWidget {
-  final String image;
   final String name;
-  final int calories;
+  final String ingredients;
+  final String instructions;
+  final String totalCalories;
 
-  RecipeCard({required this.image, required this.name, required this.calories});
-
-  Future<void> addCalories(int caloriesToAdd) async {
-    final docRef =
-        FirebaseFirestore.instance.collection('calories').doc('today');
-    final snapshot = await docRef.get();
-    if (snapshot.exists) {
-      int currentCalories = snapshot.data()!['calories'] ?? 0;
-      await docRef.update({'calories': currentCalories + caloriesToAdd});
-    } else {
-      await docRef.set({'calories': caloriesToAdd});
-    }
-  }
+  RecipeCard({
+    required this.name,
+    required this.ingredients,
+    required this.instructions,
+    required this.totalCalories
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: ListTile(
-        leading: Image.network(image, width: 50, height: 50, fit: BoxFit.cover),
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => RecipeDetailPage(
+              name: name,
+              ingredients: ingredients,
+              instructions: instructions,
+            ),
+          ),
+        );
+      },
+      child: Card(
+        margin: EdgeInsets.symmetric(horizontal: 8.0),
+        child: Container(
+          width: 150,
+          child: ListTile(
+            title: Text(name),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text('Ingredients: $ingredients'),
+                Text('Instructions: $instructions'),
+                Text('totalCalories: $totalCalories')
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class RecipeDetailPage extends StatelessWidget {
+  final String name;
+  final String ingredients;
+  final String instructions;
+
+  RecipeDetailPage({
+    required this.name,
+    required this.ingredients,
+    required this.instructions,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
         title: Text(name),
-        subtitle: Text('$calories Cal'),
-        trailing: IconButton(
-          icon: Icon(Icons.add_circle),
-          onPressed: () => addCalories(calories),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Ingredients', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            SizedBox(height: 8),
+            Text(ingredients, style: TextStyle(fontSize: 16)),
+            SizedBox(height: 16),
+            Text('Instructions', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            SizedBox(height: 8),
+            Text(instructions, style: TextStyle(fontSize: 16)),
+          ],
         ),
       ),
     );

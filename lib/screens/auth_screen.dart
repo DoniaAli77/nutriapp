@@ -118,6 +118,7 @@ try {
             .set({ 
           'username': username, 
           'email': email, 
+          'goal':false
            
         }); 
         

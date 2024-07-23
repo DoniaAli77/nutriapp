@@ -1,12 +1,23 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+
 import 'package:firebase_auth/firebase_auth.dart';
+
 import 'package:firebase_core/firebase_core.dart';
+
 import 'package:flutter/material.dart';
+
 import 'package:lottie/lottie.dart';
+
 import 'package:animations/animations.dart';
+
 import 'package:nutriapp/screens/Goal.dart';
+import 'package:nutriapp/screens/SetGoalOrPass.dart';
+
 import 'package:nutriapp/screens/home_page.dart';
+
 import 'package:nutriapp/screens/loadingScreen.dart';
+import 'package:nutriapp/screens/login_page.dart';
+
 import 'calorie_tracking_page.dart';
 
 class HomePage extends StatelessWidget {
@@ -14,20 +25,20 @@ class HomePage extends StatelessWidget {
 
   Future<bool> checkUserExistInGoals(String userId) async {
     try {
-      // Get the document reference
-      final docRef = db.collection("Nutrients").doc(userId);
-
-      // Fetch the document snapshot
+// Get the document reference
+      final docRef = db.collection("users").doc(userId);
+// Fetch the document snapshot
       final docSnapshot = await docRef.get();
 
-      // Check if the document exists
+// Check if the document exists
       if (docSnapshot.exists) {
-        return true; // Document exists
+        return docSnapshot.data()!['goal']; // Document exists
       } else {
         return false; // Document does not exist
       }
     } catch (e) {
       print("Error getting document: $e");
+
       return false; // Consider logging the error or handling it as needed
     }
   }
@@ -39,28 +50,35 @@ class HomePage extends StatelessWidget {
           .doc(userId)
           .get();
 
-      // Check if the document exists
+// Check if the document exists
+
       if (userData.exists) {
         String name = userData.data()!["username"];
-        print('hi');
-        print(name);
+
         return name; // Document exists
       } else {
         return "User"; // Document does not exist
       }
     } catch (e) {
       print("Error getting document: $e");
+
       return ""; // Consider logging the error or handling it as needed
     }
   }
 
   Widget build(BuildContext context) {
     User? user = FirebaseAuth.instance.currentUser;
-    // String displayName = user?.displayName ?? 'Guest';
-    //  String displayName = user != null ? 'Guest' : 'Anonymous';
-    var Name = '';
+
+// // String displayName = user?.displayName ?? 'Guest';
+
+// // String displayName = user != null ? 'Guest' : 'Anonymous';
+
+    var Name = 'eman';
+
     GetUserName(user!.uid).then((x) => Name = x);
+
     String UserId = user.uid;
+// String UserId = "12345";
     return Scaffold(
       appBar: AppBar(
         title: Text('Fancy Recipe App'),
@@ -74,25 +92,35 @@ class HomePage extends StatelessWidget {
             OpenContainer(
               closedBuilder: (context, action) => ElevatedButton(
                 onPressed: () async {
+//onPressed: () {
                   bool userExists = await checkUserExistInGoals(UserId);
+                  if(userExists==null){
+                    Center(child: LoadingScreen());
+                  }
 
                   if (userExists) {
-                    Navigator.push(
+                    Navigator.pushNamed(
                       context,
-                      MaterialPageRoute(builder: (context) => MyHomePage()),
+                      '/setorpass',
+                      arguments: <String, String>{
+                        'UserId': UserId,
+                        'Name': Name.toString()
+                      },
                     );
                   } else {
-                    // Handle the case when the user does not exist
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(Name.toString()),
-                      ),
-                    );
+// Handle the case when the user does not exist
+
+                    // ScaffoldMessenger.of(context).showSnackBar(
+                    //   SnackBar(
+                    //     content: Text(Name.toString()),
+                    //   ),
+                    //);
+
                     Navigator.pushNamed(
                       context,
                       '/goal',
                       arguments: <String, String>{
-                        'User Id': UserId,
+                        'UserId': UserId,
                         'Name': Name.toString()
                       },
                     );

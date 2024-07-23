@@ -2,7 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:nutriapp/screens/Goal.dart';
-import 'package:nutriapp/screens/plan2.dart';
+import 'package:nutriapp/screens/analyze.dart';
 // import 'package:nutriapp/screens/home_page.dart';
 import 'firebase_options.dart';
 import 'screens/auth_screen.dart';
@@ -11,6 +11,8 @@ import 'screens/home2.dart';
 import 'screens/home_page.dart';
 import 'screens/loadingScreen.dart';
 import 'screens/profile.dart';
+import 'screens/setgoalorpass.dart';
+import 'screens/userdetailsScreen.dart';
 
 void main() {
   runApp(MyApp());
@@ -73,19 +75,22 @@ class _MyAppState extends State<MyApp> {
                     return LoadingScreen();
                   }
                   if (userSnapshot.hasData) {
-                    return MyHomePage();
+                    return HomePage();
                   }
                   return LoginScreen();
                 },
               )
             : LoadingScreen(),
         '/home': (ctx) => MyHomePage(),
+        '/track':(ctx)=>HomePage(),
         '/login': (ctx) => LoginScreen(),
         '/loading': (ctx) => LoadingScreen(),
         '/goal': (ctx) => Goal(),
         '/calorie':(ctx)=>TrackingPage(),
         '/profile':(ctx)=>ProfilePage(),
-        '/analyze':(ctx)=> AnalyzePage()
+        '/analyze':(ctx)=> AnalyzePage(),
+        '/setorpass': (ctx) => Setgoalorpass(),
+        '/PersonalDetailsPage':(ctx) => UserDetailsScreen(),
       },
     );
   }
