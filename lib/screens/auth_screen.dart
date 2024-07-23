@@ -50,7 +50,7 @@ class _LoginScreenState extends State<LoginScreen> {
               children: [ 
                 Center( 
                   child: Text( 
-                    "Class Chat", 
+                    "Nutrii", 
                     style: TextStyle(fontSize: 30), 
                   ), 
                 ), 

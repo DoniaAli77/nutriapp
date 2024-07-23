@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -12,67 +10,8 @@ class AnalyzePage extends StatefulWidget {
 }
 
 class _AnalyzePageState extends State<AnalyzePage> {
-  // Function to extract weekly plans from the response content
-  Map<String, dynamic> extractWeeklyPlans(String content) {
-    if (content == null) {
-      print('No messages found in response');
-      return {};
-    }
-
-    final textContent = content + '\n';
-    final weeks = <String, dynamic>{};
-    final regex = RegExp(r'### Week \d+([\s\S]+?)(?=### Week \d+|$)', multiLine: true);
-    final matches = regex.allMatches(textContent);
-
-    for (var match in matches) {
-      final weekContent = match.group(0);
-      if (weekContent != null) {
-        final weekTitle = RegExp(r'### Week \d+').firstMatch(weekContent)?.group(0) ?? 'Unknown Week';
-        final weekDetails = weekContent.replaceFirst(RegExp(r'### Week \d+'), '').trim();
-        weeks[weekTitle] = weekDetails;
-      }
-    }
-
-    return weeks;
-  }
-
-  // Function to extract suggested recipes from the response content
-  Map<String, dynamic> extractSuggestedRecipes(String content) {
-    if (content == null) {
-      print('No messages found in response');
-      return {};
-    }
-
-    final textContent = content + '\n';
-    final recipes = <String, dynamic>{};
-    final regex = RegExp(r'(?<=\*\*Recipe Name\*\*:[\s\S]+?)(?=\*\*Recipe Name\*\*|$)', multiLine: true);
-    final matches = regex.allMatches(textContent);
-
-    for (var match in matches) {
-      final recipeContent = match.group(0);
-      if (recipeContent != null) {
-        final recipeNameMatch = RegExp(r'(?<=\*\*Recipe Name\*\*:)(.*?)(?=\*\*Ingredients\*\*)').firstMatch(recipeContent);
-        final recipeName = recipeNameMatch?.group(0)?.trim() ?? 'Unnamed Recipe';
-        final ingredientsMatch = RegExp(r'(?<=\*\*Ingredients\*\*:)(.*?)(?=\*\*Instructions\*\*)').firstMatch(recipeContent);
-        final ingredients = ingredientsMatch?.group(0)?.trim() ?? '';
-        final instructionsMatch = RegExp(r'(?<=\*\*Instructions\*\*:)(.*?)(?=\*\*Recipe Name\*\*|$)').firstMatch(recipeContent);
-        final instructions = instructionsMatch?.group(0)?.trim() ?? '';
-
-        if (recipeName.isNotEmpty) {
-          recipes[recipeName] = {
-            'ingredients': ingredients,
-            'instructions': instructions,
-          };
-        }
-      }
-    }
-
-    return recipes;
-  }
-
-  // Function to fetch data from OpenAI and process the response
   Future<void> _fetchDataFromOpenAI() async {
-    final apiKey = 'sk-None-zlMFcw87RDICYqW68fBPT3BlbkFJtUvH8Ga3P6iwyZg5pO5M'; // Replace with your actual OpenAI API key
+    final apiKey = 'sk-None-FQVkW1HdOes9Yz6NU4OPT3BlbkFJzK9BCoZcafAuA1hvUh6i'; // Replace with your actual OpenAI API key
     final url = 'https://api.openai.com/v1/chat/completions'; // Replace with your actual OpenAI endpoint
 
     try {
@@ -88,38 +27,58 @@ class _AnalyzePageState extends State<AnalyzePage> {
             'role': 'user',
             'content': '''I am a 35-year-old male, 6 feet tall, weighing 180 pounds, with a moderately active lifestyle. My goal is to lose 10 pounds over the next 8 weeks.
 
-Please create a structured 2-week diet plan including the following:
+Please create a structured 4-week diet plan and suggested recipes in a JSON format with the following structure:
 
-1. **Weekly Plans**:
-   - Provide a plan for each week, starting from Week 1 to Week 4.
-   - For each week, include the following:
-     - **Total Weekly Calories**: The total calorie count for each week.
-     - **Daily Meals**: List the meals for each day (e.g., breakfast, lunch, dinner).
-     - **Meal Recipes**: Include the recipe for each meal with:
-       - **Ingredients**: List of ingredients with quantities.
-       - **Instructions**: Detailed preparation steps.
-
-2. **Suggested Recipes**:
-   - Provide additional recipes suitable for the diet but not tied to specific meals.
-   - Each recipe should include:
-     - **Recipe Name**: The name of the recipe.
-     - **Ingredients**: List of ingredients with quantities.
-     - **Instructions**: Detailed preparation steps.
-
-Please format your response in clear sections with headings. For the weekly plans, use the format:
-- **Week X**:
-  - **Total Weekly Calories**: [calories]
-  - **Day X**:
-    - **Breakfast**: [meal details]
-    - **Lunch**: [meal details]
-    - **Dinner**: [meal details]
-    - **Snack**: [optional snack details]
-
-For suggested recipes, use the format:
-- **Recipe Name**:
-  - **Ingredients**:
-  - **Instructions**:
-''',
+{
+  "weekly_plans": {
+    "Week 1": {
+      "Total Weekly Calories": "XXXX",
+      "Daily Meals": {
+        "Day 1": {
+          "Breakfast": "XXXX",
+          "Lunch": "XXXX",
+          "Dinner": "XXXX",
+          "Snack": "XXXX"
+        },
+        ...
+      },
+      "Meal Recipes": {
+        "Breakfast": {
+          "meal_name": "XXXX",
+          "ingredients": "XXXX",
+          "instructions": "XXXX"
+        },
+        "Lunch": {
+          "meal_name": "XXXX",
+          "ingredients": "XXXX",
+          "instructions": "XXXX"
+        },
+        "Dinner": {
+          "meal_name": "XXXX",
+          "ingredients": "XXXX",
+          "instructions": "XXXX"
+        },
+        "Snack": {
+          "meal_name": "XXXX",
+          "ingredients": "XXXX",
+          "instructions": "XXXX"
+        }
+      }
+    },
+    ...
+  },
+  "suggested_recipes": {
+    "Recipe 1": {
+      "Ingredients": "XXXX",
+      "Instructions": "XXXX"
+    },
+    "Recipe 2": {
+      "Ingredients": "XXXX",
+      "Instructions": "XXXX"
+    },
+    ...
+  }
+}'''
           },
         ],
         'max_tokens': 10000,
@@ -135,7 +94,7 @@ For suggested recipes, use the format:
         final responseData = jsonDecode(response.body) as Map<String, dynamic>;
 
         // Debugging: Print the raw response data
-        log('Raw API Response: $responseData');
+        print('Raw API Response: $responseData');
 
         final userId = FirebaseAuth.instance.currentUser?.uid ?? 'guest';
         if (userId == 'guest') throw Exception('User not registered');
@@ -147,28 +106,37 @@ For suggested recipes, use the format:
           final content = message['content'] as String?;
 
           if (content != null) {
-            // Extract and save weekly plans
-            final weeklyPlans = extractWeeklyPlans(content);
-            if (weeklyPlans.isEmpty) {
-              print('No weekly plans extracted');
-            } else {
-              await FirebaseFirestore.instance
-                  .collection('plans')
-                  .doc(userId)
-                  .set({'weeks': weeklyPlans});
-              print('Weekly plans saved to Firestore');
-            }
+            // Extract JSON from the content string
+            final jsonString = content.substring(content.indexOf("{"), content.lastIndexOf("}") + 1);
 
-            // Extract and save suggested recipes
-            final suggestedRecipes = extractSuggestedRecipes(content);
-            if (suggestedRecipes.isEmpty) {
-              print('No suggested recipes extracted');
-            } else {
-              await FirebaseFirestore.instance
-                  .collection('suggested_recipes')
-                  .doc(userId)
-                  .set(suggestedRecipes);
-              print('Suggested recipes saved to Firestore');
+            try {
+              final parsedData = jsonDecode(jsonString) as Map<String, dynamic>;
+
+              // Extract and save weekly plans
+              final weeklyPlans = parsedData['weekly_plans'] as Map<String, dynamic>;
+              if (weeklyPlans.isEmpty) {
+                print('No weekly plans extracted');
+              } else {
+                await FirebaseFirestore.instance
+                    .collection('plans')
+                    .doc(userId)
+                    .set({'weeks': weeklyPlans});
+                print('Weekly plans saved to Firestore');
+              }
+
+              // Extract and save suggested recipes
+              final suggestedRecipes = parsedData['suggested_recipes'] as Map<String, dynamic>;
+              if (suggestedRecipes.isEmpty) {
+                print('No suggested recipes extracted');
+              } else {
+                await FirebaseFirestore.instance
+                    .collection('suggested_recipes')
+                    .doc(userId)
+                    .set(suggestedRecipes);
+                print('Suggested recipes saved to Firestore');
+              }
+            } catch (jsonError) {
+              print('Error parsing JSON: $jsonError');
             }
           } else {
             print('No content found in message');
